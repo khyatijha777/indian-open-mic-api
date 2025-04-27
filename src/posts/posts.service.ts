@@ -53,8 +53,13 @@ export class PostsService {
     createPostDto: CreatePostDto,
     user: User,
   ): Promise<Post> {
+    console.log('🚀 ~ PostsService ~ user:', user);
     if (!file) {
       throw new Error('No file provided');
+    }
+
+    if (!user || !user.id) {
+      throw new Error('Invalid user provided');
     }
 
     // Upload to S3
@@ -129,7 +134,8 @@ export class PostsService {
       isPublished: true,
     });
 
-    return this.postsRepository.save(post);
+    const storedInPost = await this.postsRepository.save(post);
+    return storedInPost;
   }
 
   async findAll(): Promise<Post[]> {

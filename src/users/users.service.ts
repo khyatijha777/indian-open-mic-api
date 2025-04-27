@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -14,13 +18,33 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     try {
+      // Check if user already exists
+      const existingUser = await this.usersRepository.findOne({
+        where: { email: createUserDto.email },
+      });
+      console.log('🚀 ~ UsersService ~ create ~ existingUser:', existingUser);
+
+      if (existingUser) {
+        throw new ConflictException('User with this email already exists');
+      }
+
       const hashedPassword: string = await hash(createUserDto.password, 10);
       const user = this.usersRepository.create({
         ...createUserDto,
         password: hashedPassword,
       });
       return await this.usersRepository.save(user);
-    } catch (error: unknown) {
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      // Check for unique constraint violation
+      if (
+        error instanceof Error &&
+        error.message.includes('duplicate key value violates unique constraint')
+      ) {
+        throw new ConflictException('User with this email already exists');
+      }
       if (error instanceof Error) {
         throw new Error(`Failed to create user: ${error.message}`);
       }
@@ -31,7 +55,7 @@ export class UsersService {
   async findByEmail(email: string): Promise<User | null> {
     try {
       return await this.usersRepository.findOne({ where: { email } });
-    } catch (error: unknown) {
+    } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Failed to find user by email: ${error.message}`);
       }
@@ -39,14 +63,14 @@ export class UsersService {
     }
   }
 
-  async findById(id: number): Promise<User | null> {
+  async findById(id: string): Promise<User | null> {
     try {
       const user = await this.usersRepository.findOne({ where: { id } });
       if (!user) {
         throw new NotFoundException(`User with ID ${id} not found`);
       }
       return user;
-    } catch (error: unknown) {
+    } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
