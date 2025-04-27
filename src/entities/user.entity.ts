@@ -1,20 +1,18 @@
-import { IsString, IsEmail, IsNotEmpty, MinLength } from 'class-validator';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { IsEmail, IsString, IsNotEmpty, MinLength } from 'class-validator';
+import { Post } from './post.entity';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-
-  @Column()
-  @IsString()
-  @IsNotEmpty()
-  name!: string;
 
   @Column({ unique: true })
   @IsEmail()
@@ -24,9 +22,20 @@ export class User {
   @Column()
   @IsString()
   @IsNotEmpty()
+  name!: string;
+
+  @Column()
+  @IsString()
+  @IsNotEmpty()
   @MinLength(8)
   password!: string;
 
+  @OneToMany(() => Post, (post) => post.user)
+  posts!: Post[];
+
   @CreateDateColumn()
   createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }
