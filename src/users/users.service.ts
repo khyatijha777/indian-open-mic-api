@@ -1,41 +1,59 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { hash } from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  private readonly users:User[] = [];
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
 
-  create(createUserDto: CreateUserDto) {
-    const user = {
-      id: this.users.length + 1,
-      ...createUserDto,
-      createdAt: new Date(),
-      posts: [],
-    };
-    this.users.push(user);
-    return user;
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    try {
+      const hashedPassword: string = await hash(createUserDto.password, 10);
+      const user = this.usersRepository.create({
+        ...createUserDto,
+        password: hashedPassword,
+      });
+      return await this.usersRepository.save(user);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to create user: ${error.message}`);
+      }
+      throw new Error('Failed to create user: Unknown error');
+    }
   }
 
-  findAll() {
-    return this.users;
+  async findByEmail(email: string): Promise<User | null> {
+    try {
+      return await this.usersRepository.findOne({ where: { email } });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to find user by email: ${error.message}`);
+      }
+      throw new Error('Failed to find user by email: Unknown error');
+    }
   }
 
-  findOne(id: number) {
-    return this.users.find(user => user.id === id);
+  async findById(id: number): Promise<User | null> {
+    try {
+      const user = await this.usersRepository.findOne({ where: { id } });
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+      return user;
+    } catch (error: unknown) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error instanceof Error) {
+        throw new Error(`Failed to find user by ID: ${error.message}`);
+      }
+      throw new Error('Failed to find user by ID: Unknown error');
+    }
   }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    const user = this.findOne(id);
-    if (!user) return null;
-    Object.assign(user, updateUserDto);
-    return user;
-  }
-
-  remove(id: number) {
-    const index = this.users.findIndex(user => user.id === id);
-    if (index === -1) return null;
-    return this.users.splice(index, 1)[0];
-  }
-} 
+}

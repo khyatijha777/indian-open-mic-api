@@ -1,40 +1,30 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import { oAuthClientId, oAuthClientSecret, refreshToken } from 'src/endpoints';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { UsersService } from '../users/users.service';
+import { LoginDto } from './dto/login.dto';
+import { compare } from 'bcrypt';
 
 @Injectable()
-export class AuthService implements OnModuleInit {
-  private accessToken: string;
-
+export class AuthService {
   constructor(
-    private readonly httpService: HttpService,
+    private usersService: UsersService,
+    private jwtService: JwtService,
   ) {}
 
-  async onModuleInit() {
-    await this.authenticate();
+  async login(loginDto: LoginDto) {
+    const user = await this.usersService.findByEmail(loginDto.email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await compare(loginDto.password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { email: user.email, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
-
-  private async authenticate() {
-
-    const tokenUrl = 'https://oauth2.googleapis.com/token';
-    const params = new URLSearchParams();
-    params.append('client_id', oAuthClientId);
-    params.append('client_secret', oAuthClientSecret);
-    params.append('refresh_token', refreshToken);
-    params.append('grant_type', 'refresh_token');
-
-    const response = await firstValueFrom(
-      this.httpService.post(tokenUrl, params, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      }),
-    );
-
-    this.accessToken = response.data.access_token;
-    console.log("this.acceess token: ", this.accessToken);
-  }
-
-  getAccessToken(): string {
-    return this.accessToken;
-  }
-} 
+}

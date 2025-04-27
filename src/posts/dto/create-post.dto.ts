@@ -1,4 +1,15 @@
+import { IsString, IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
+
 export class CreatePostDto {
-  content: string;
-  userId: number;
-} 
+  @IsString()
+  @IsNotEmpty()
+  caption!: string;
+
+  @IsOptional()
+  @IsUrl()
+  youtubeUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  s3Url?: string;
+}

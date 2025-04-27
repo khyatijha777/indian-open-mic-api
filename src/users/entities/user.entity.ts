@@ -1,8 +1,32 @@
+import { IsString, IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
+
+@Entity('users')
 export class User {
-  id: number;
-  username: string;
-  email: string;
-  password: string;
-  posts: any[]; // This will be properly typed once we create the Post entity
-  createdAt: Date;
-} 
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column()
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @Column({ unique: true })
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
+
+  @Column()
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  password!: string;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+}
