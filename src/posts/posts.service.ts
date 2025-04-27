@@ -40,8 +40,8 @@ export class PostsService {
         type: 'authorized_user',
       },
       scopes: [
-        process.env.GOOGLE_SCOPE ||
-          'https://www.googleapis.com/auth/youtube.force-ssl',
+        'https://www.googleapis.com/auth/youtube.upload',
+        'https://www.googleapis.com/auth/youtube.readonly',
       ],
     });
 
