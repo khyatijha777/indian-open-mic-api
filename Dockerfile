@@ -31,7 +31,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/endpoints.ts ./src/endpoints.ts
 
 # Copy environment file (you'll need to provide this during deployment)
-COPY .env.example .env
+COPY .env .env
 
 # Expose the port the app runs on
 EXPOSE 3000
