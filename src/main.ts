@@ -5,15 +5,21 @@ import * as dotenv from 'dotenv';
 
 async function bootstrap() {
   dotenv.config();
+  console.log('Loaded Environment Variables:');
+  Object.keys(process.env).forEach((key) => {
+    console.log(`${key} = ${process.env[key]}`);
+  });
   
   const app = await NestFactory.create(AppModule);
+
+
   
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
   }));
   
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT || 9000);
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();
