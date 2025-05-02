@@ -29,7 +29,8 @@ RUN npm ci --only=production
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/endpoints.ts ./src/endpoints.ts
-
+COPY --from=builder /app/src/config/typeorm.config.ts ./src/config/typeorm.config.ts
+COPY --from=builder /app/src/migrations ./src/migrations
 
 # Expose the port the app runs on
 EXPOSE 3000

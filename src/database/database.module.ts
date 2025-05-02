@@ -18,7 +18,6 @@ import { Post } from '../entities/post.entity';
         entities: [User, Post],
         synchronize: false,
         logging: true,
-        ssl: false,
       }),
       inject: [ConfigService],
     }),
