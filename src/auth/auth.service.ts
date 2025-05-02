@@ -33,22 +33,23 @@ console.log('Stored password:', user.password);
     };
   }
 
-  async signup(createUserDto: CreateUserDto) {
-    const existingUser = await this.usersService.findByEmail(createUserDto.email);
-    if (existingUser) {
-      throw new BadRequestException('Email already in use');
-    }
+  // async signup(createUserDto: CreateUserDto) {
+  //   const existingUser = await this.usersService.findByEmail(createUserDto.email);
+  //   if (existingUser) {
+  //     throw new BadRequestException('Email already in use');
+  //   }
+  //   console.log("SIGN UP createUserDto.password: ", createUserDto.password);
+    
+  //   const hashedPassword = await hash(createUserDto.password, 10);
+  //   const user = await this.usersService.create({
+  //     ...createUserDto,
+  //     password: hashedPassword,
+  //   });
 
-    const hashedPassword = await hash(createUserDto.password, 10);
-    const user = await this.usersService.create({
-      ...createUserDto,
-      password: hashedPassword,
-    });
-
-    const payload = { email: user.email, sub: user.id };
-    return {
-      access_token: this.jwtService.sign(payload),
-      ...user,
-    };
-  }
+  //   const payload = { email: user.email, sub: user.id };
+  //   return {
+  //     access_token: this.jwtService.sign(payload),
+  //     ...user,
+  //   };
+  // }
 }
