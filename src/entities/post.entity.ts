@@ -25,8 +25,8 @@ export class Post {
   @Column({ default: false })
   isPublished!: boolean;
 
-  @ManyToOne(() => User, (user) => user.posts)
-  user!: User;
+  @ManyToOne(() => User, (user) => user.posts, { nullable: true })
+  user?: User;
 
   @CreateDateColumn()
   createdAt!: Date;

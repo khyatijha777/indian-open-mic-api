@@ -4,7 +4,6 @@ import {
   UseInterceptors,
   UploadedFile,
   Body,
-  UseGuards,
   Get,
   Param,
   Patch,
@@ -13,28 +12,25 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '../entities/user.entity';
 import { Post as PostEntity } from '../entities/post.entity';
 
 @Controller('posts')
-@UseGuards(JwtAuthGuard)
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('media'))
+  @UseInterceptors(FileInterceptor('file'))
   async createPost(
     @UploadedFile() file: Express.Multer['File'],
     @Body() createPostDto: CreatePostDto,
-    @CurrentUser() user: User,
   ) {
-    return this.postsService.createPost(file, createPostDto, user);
+    console.log("feiojf");
+    return this.postsService.createPost(file, createPostDto);
   }
 
   @Get()
   findAll() {
+    console.log("djeiofj");
     return this.postsService.findAll();
   }
 

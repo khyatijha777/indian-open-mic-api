@@ -20,15 +20,15 @@ export class CreateUserAndPostTables1710864000000
     await queryRunner.query(`
       CREATE TABLE "posts" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-        "caption" character varying NOT NULL,
-        "mediaUrl" character varying NOT NULL,
-        "youtubeUrl" character varying NOT NULL,
+        "caption" character varying,
+        "mediaUrl" character varying,
+        "youtubeUrl" character varying,
         "isPublished" boolean NOT NULL DEFAULT false,
-        "userId" uuid NOT NULL,
+        "userId" uuid,
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "PK_posts" PRIMARY KEY ("id"),
-        CONSTRAINT "FK_posts_user" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
+        CONSTRAINT "FK_posts_user" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL
       )
     `);
   }

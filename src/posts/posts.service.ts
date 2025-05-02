@@ -30,6 +30,11 @@ export class PostsService {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       region: process.env.AWS_REGION,
+      maxRetries: 3,
+      httpOptions: {
+        timeout: 30000,
+        connectTimeout: 30000,
+      },
     });
 
     const auth = new GoogleAuth({
@@ -51,92 +56,91 @@ export class PostsService {
   async createPost(
     file: UploadedFile,
     createPostDto: CreatePostDto,
-    user: User,
+    user?: User,
   ): Promise<Post> {
-    console.log('🚀 ~ PostsService ~ user:', user);
     if (!file) {
       throw new Error('No file provided');
     }
 
-    if (!user || !user.id) {
-      throw new Error('Invalid user provided');
-    }
+    const s3Key = `posts/${user?.id || 'anonymous'}/${Date.now()}-${file.originalname}`;
+    console.log('Uploading to S3 with key:', s3Key);
 
-    // Upload to S3
-    const s3Key = `posts/${user.id}/${Date.now()}-${file.originalname}`;
-    await this.s3
-      .putObject({
+    let s3Url: string;
+    let tempFilePath: string;
+
+    try {
+      // First, save the file locally
+      tempFilePath = path.join(os.tmpdir(), file.originalname);
+      await fs.promises.writeFile(tempFilePath, file.buffer);
+
+      // Upload to S3 using the local file
+      const uploadParams = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: s3Key,
-        Body: file.buffer,
+        Body: fs.createReadStream(tempFilePath),
         ContentType: file.mimetype,
-      })
-      .promise();
+      };
 
-    const s3Url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+      await this.s3.putObject(uploadParams).promise();
+      s3Url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+      console.log('Successfully uploaded to S3:', s3Url);
 
-    // Download file from S3 to local temp directory
-    const tempFilePath = path.join(os.tmpdir(), file.originalname);
-    const fileStream = fs.createWriteStream(tempFilePath);
-    const s3Stream = this.s3
-      .getObject({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: s3Key,
-      })
-      .createReadStream();
-
-    await new Promise<void>((resolve, reject) => {
-      s3Stream.pipe(fileStream);
-      s3Stream.on('error', reject);
-      fileStream.on('finish', resolve);
-    });
-
-    // Upload to YouTube
-    const fileSize = fs.statSync(tempFilePath).size;
-    const youtubeResponse = await this.youtube.videos.insert(
-      {
-        part: 'id,snippet,status',
-        notifySubscribers: false,
-        requestBody: {
-          snippet: {
-            title: createPostDto.caption,
-            description: createPostDto.caption,
+      // Upload to YouTube
+      const fileSize = fs.statSync(tempFilePath).size;
+      const youtubeResponse = await this.youtube.videos.insert(
+        {
+          part: 'id,snippet,status',
+          notifySubscribers: false,
+          requestBody: {
+            snippet: {
+              title: createPostDto.caption,
+              description: createPostDto.caption,
+            },
+            status: {
+              privacyStatus: 'public',
+            },
           },
-          status: {
-            privacyStatus: 'public',
+          media: {
+            body: fs.createReadStream(tempFilePath),
           },
         },
-        media: {
-          body: fs.createReadStream(tempFilePath),
+        {
+          onUploadProgress: (evt: { bytesRead: number }) => {
+            const progress = (evt.bytesRead / fileSize) * 100;
+            console.log(`YouTube upload progress: ${Math.round(progress)}%`);
+          },
         },
-      },
-      {
-        onUploadProgress: (evt: { bytesRead: number }) => {
-          const progress = (evt.bytesRead / fileSize) * 100;
-          console.log(`${Math.round(progress)}% complete`);
-        },
-      },
-    );
+      );
 
-    // Clean up temp file
-    fs.unlinkSync(tempFilePath);
+      if (!youtubeResponse.data.id) {
+        throw new Error('Failed to upload video to YouTube');
+      }
 
-    if (!youtubeResponse.data.id) {
-      throw new Error('Failed to upload video to YouTube');
+      // Create post in database
+      const post = this.postsRepository.create({
+        caption: createPostDto.caption,
+        mediaUrl: s3Url,
+        youtubeUrl: `https://www.youtube.com/watch?v=${youtubeResponse.data.id}`,
+        user,
+        isPublished: true,
+      });
+
+      return this.postsRepository.save(post);
+    } catch (error) {
+      console.error('Error in createPost:', error);
+      throw error;
+    } finally {
+      // Clean up temp file
+      if (tempFilePath && fs.existsSync(tempFilePath)) {
+        try {
+          await fs.promises.unlink(tempFilePath);
+        } catch (cleanupError) {
+          console.error('Error cleaning up temp file:', cleanupError);
+        }
+      }
     }
-
-    // Create post in database
-    const post = this.postsRepository.create({
-      caption: createPostDto.caption,
-      mediaUrl: s3Url,
-      youtubeUrl: `https://www.youtube.com/watch?v=${youtubeResponse.data.id}`,
-      user,
-      isPublished: true,
-    });
-
-    const storedInPost = await this.postsRepository.save(post);
-    return storedInPost;
   }
+
 
   async findAll(): Promise<Post[]> {
     return this.postsRepository.find({
