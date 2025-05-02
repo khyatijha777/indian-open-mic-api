@@ -16,7 +16,7 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<Partial<User>> {
     try {
       // Check if user already exists
       const existingUser = await this.usersRepository.findOne({
@@ -33,7 +33,9 @@ export class UsersService {
         ...createUserDto,
         password: hashedPassword,
       });
-      return await this.usersRepository.save(user);
+      const savedUser  = await this.usersRepository.save(user);
+      const {password, ...restUser} = savedUser;
+      return restUser;
     } catch (error) {
       if (error instanceof ConflictException) {
         throw error;
