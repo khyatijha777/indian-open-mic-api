@@ -18,6 +18,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    console.log("user: ", user);
+    console.log('Input password:', loginDto.password);
+console.log('Stored password:', user.password);
     const isPasswordValid = await compare(loginDto.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
