@@ -6,8 +6,6 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
-import { JwtStrategy } from './jwt.strategy';
-import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -27,10 +25,9 @@ import { JwtModule } from '@nestjs/jwt';
         synchronize: false,
         ssl: {
           rejectUnauthorized: false,
-        }
+        },
       }),
       inject: [ConfigService],
-      
     }),
     AuthModule,
     UsersModule,
