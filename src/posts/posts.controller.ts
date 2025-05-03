@@ -26,7 +26,9 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', {
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  }))
   async createPost(
     @UploadedFile() file: Express.Multer['File'],
     @Body() createPostDto: CreatePostDto,
