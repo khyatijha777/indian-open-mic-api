@@ -14,7 +14,7 @@ async function bootstrap() {
 
   // Disable Nest's built-in body parser
   const app = await NestFactory.create(AppModule, {
-    bodyParser: false,
+    bodyParser: true,
   });
 
   // Use custom Express parsers with increased limits
