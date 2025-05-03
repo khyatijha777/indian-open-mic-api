@@ -8,16 +8,18 @@ import {
   Param,
   Patch,
   Delete,
-  UseGuards,
+  UseGuards
+  ,Req
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { Post as PostEntity } from '../entities/post.entity';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/jwt-auth.guard';
+import { Request } from 'express';
 import { User } from 'src/entities/user.entity';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
+@UseGuards(JwtAuthGuard)
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
 export class PostsController {
@@ -28,17 +30,20 @@ export class PostsController {
   async createPost(
     @UploadedFile() file: Express.Multer['File'],
     @Body() createPostDto: CreatePostDto,
-    @CurrentUser() user: User,
+    @Req() req: Request
   ) {
-    console.log('🚀 ~ PostsController ~ user:', user);
-    console.log('feiojf');
+    const user = req.user as User;
+    console.log("user: ", user);
     return this.postsService.createPost(file, createPostDto, user);
   }
 
   @Get()
-  findAll() {
-    console.log('djeiofj');
-    return this.postsService.findAll();
+  findAll(
+    @Req() req: Request
+  ) {
+    const user = req.user as User;
+    console.log("djeiofj");
+    return this.postsService.findAll(user);
   }
 
   @Get(':id')

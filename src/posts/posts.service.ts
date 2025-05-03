@@ -10,6 +10,7 @@ import { GoogleAuth } from 'google-auth-library';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { JwtPayload } from 'src/jwt.strategy';
 
 interface UploadedFile {
   originalname: string;
@@ -63,6 +64,8 @@ export class PostsService {
       throw new Error('No file provided');
     }
 
+    console.log("user: ", user);
+    
     const s3Key = `posts/${user?.id || 'anonymous'}/${Date.now()}-${file.originalname}`;
     console.log('Uploading to S3 with key:', s3Key);
 
@@ -142,9 +145,12 @@ export class PostsService {
     }
   }
 
-  async findAll(): Promise<Post[]> {
+
+  async findAll(user: User): Promise<Post[]> {
     return this.postsRepository.find({
+      where: { user: { id: user.id } },
       relations: ['user'],
+      order: { createdAt: 'DESC' }, 
     });
   }
 

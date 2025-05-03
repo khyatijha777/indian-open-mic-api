@@ -6,11 +6,17 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
+import { JwtStrategy } from './jwt.strategy';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '100d' },
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -36,6 +42,6 @@ import { PostsModule } from './posts/posts.module';
     PostsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtStrategy],
 })
 export class AppModule {}
