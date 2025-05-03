@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as dotenv from 'dotenv';
-import * as express from 'express';
 
 async function bootstrap() {
   dotenv.config();
@@ -11,16 +10,8 @@ async function bootstrap() {
     console.log(`${key} = ${process.env[key]}`);
   });
 
-  const app = await NestFactory.create(AppModule, {
-    bodyParser: true, // default is true anyway
-    rawBody: false,
-  });
+  const app = await NestFactory.create(AppModule);
   app.enableCors();
-
-  console.log('app: ', app);
-  // // Set global body size limits using Express parser options
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   app.useGlobalPipes(
     new ValidationPipe({
