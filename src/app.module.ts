@@ -14,13 +14,8 @@ import { JwtModule } from '@nestjs/jwt';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '100d' },
-    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get('DB_HOST'),
@@ -42,6 +37,6 @@ import { JwtModule } from '@nestjs/jwt';
     PostsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, JwtStrategy],
+  providers: [AppService],
 })
 export class AppModule {}

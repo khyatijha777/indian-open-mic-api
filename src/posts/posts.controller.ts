@@ -8,16 +8,16 @@ import {
   Param,
   Patch,
   Delete,
-  UseGuards
-  ,Req
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { Post as PostEntity } from '../entities/post.entity';
-import { JwtAuthGuard } from 'src/jwt-auth.guard';
 import { Request } from 'express';
 import { User } from 'src/entities/user.entity';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('posts')
@@ -26,25 +26,25 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
-  }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    }),
+  )
   async createPost(
     @UploadedFile() file: Express.Multer['File'],
     @Body() createPostDto: CreatePostDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const user = req.user as User;
-    console.log("user: ", user);
+    console.log('user: ', user);
     return this.postsService.createPost(file, createPostDto, user);
   }
 
   @Get()
-  findAll(
-    @Req() req: Request
-  ) {
+  findAll(@Req() req: Request) {
     const user = req.user as User;
-    console.log("djeiofj");
+    console.log('djeiofj');
     return this.postsService.findAll(user);
   }
 
