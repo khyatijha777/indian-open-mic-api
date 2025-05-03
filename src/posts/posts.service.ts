@@ -58,6 +58,7 @@ export class PostsService {
     createPostDto: CreatePostDto,
     user?: User,
   ): Promise<Post> {
+    console.log('🚀 ~ PostsService ~ user:', user);
     if (!file) {
       throw new Error('No file provided');
     }
@@ -140,7 +141,6 @@ export class PostsService {
       }
     }
   }
-
 
   async findAll(): Promise<Post[]> {
     return this.postsRepository.find({
